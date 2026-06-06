@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using EAuditoria.Application.Exceptions;
 
 namespace EAuditoria.API.Middleware;
 
@@ -30,6 +31,28 @@ public class GlobalExceptionMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        context.Response.ContentType = "application/json";
+
+        // Caso especial: CNPJ pertence a empresa inativa → 409 com payload enriquecido
+        if (exception is EmpresaInativaException inativa)
+        {
+            _logger.LogWarning("CNPJ de empresa inativa: {Id} - {RazaoSocial}", inativa.EmpresaInativaId, inativa.RazaoSocial);
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            var payload = new
+            {
+                status            = 409,
+                mensagem          = inativa.Message,
+                empresaInativaId  = inativa.EmpresaInativaId,
+                razaoSocial       = inativa.RazaoSocial,
+                traceId           = context.TraceIdentifier
+            };
+            await context.Response.WriteAsync(JsonSerializer.Serialize(payload, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+            return;
+        }
+
         var (statusCode, mensagem) = exception switch
         {
             KeyNotFoundException      => (HttpStatusCode.NotFound,            exception.Message),
@@ -45,8 +68,7 @@ public class GlobalExceptionMiddleware
             _logger.LogWarning(exception, "Erro de negócio [{Type}]: {Message}",
                 exception.GetType().Name, exception.Message);
 
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode  = (int)statusCode;
+        context.Response.StatusCode = (int)statusCode;
 
         object resposta = _env.IsDevelopment() && statusCode == HttpStatusCode.InternalServerError
             ? new
@@ -65,11 +87,9 @@ public class GlobalExceptionMiddleware
                 traceId  = context.TraceIdentifier
             };
 
-        var json = JsonSerializer.Serialize(resposta, new JsonSerializerOptions
+        await context.Response.WriteAsync(JsonSerializer.Serialize(resposta, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await context.Response.WriteAsync(json);
+        }));
     }
 }

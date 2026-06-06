@@ -2,6 +2,7 @@ using AutoMapper;
 using EAuditoria.Application.DTOs.Request;
 using EAuditoria.Application.DTOs.Response;
 using EAuditoria.Application.Engine;
+using EAuditoria.Application.Exceptions;
 using EAuditoria.Application.Interfaces.Services;
 using EAuditoria.Domain.Entities;
 using EAuditoria.Domain.Interfaces;
@@ -33,6 +34,12 @@ public class EmpresaService : IEmpresaService
         return _mapper.Map<IEnumerable<EmpresaResponse>>(empresas);
     }
 
+    public async Task<IEnumerable<EmpresaResponse>> ListarInativasAsync()
+    {
+        var empresas = await _empresaRepository.ObterInativasAsync();
+        return _mapper.Map<IEnumerable<EmpresaResponse>>(empresas);
+    }
+
     public async Task<EmpresaResponse?> ObterPorIdAsync(Guid id)
     {
         var empresa = await _empresaRepository.ObterPorIdAsync(id);
@@ -43,8 +50,16 @@ public class EmpresaService : IEmpresaService
     {
         var cnpjLimpo = LimparCnpj(request.Cnpj);
 
-        if (await _empresaRepository.ExisteCnpjAsync(cnpjLimpo))
-            throw new InvalidOperationException($"CNPJ '{request.Cnpj}' já cadastrado.");
+        // Verifica se o CNPJ já existe (ativa ou inativa)
+        var existente = await _empresaRepository.ObterPorCnpjAsync(cnpjLimpo);
+        if (existente is not null)
+        {
+            if (existente.Ativo)
+                throw new InvalidOperationException($"CNPJ '{request.Cnpj}' já está cadastrado em uma empresa ativa.");
+
+            // CNPJ pertence a empresa inativa — informa ao cliente para que possa reativar
+            throw new EmpresaInativaException(existente.Id, existente.RazaoSocial, request.Cnpj);
+        }
 
         var empresa = new Empresa(request.RazaoSocial, cnpjLimpo, request.RegimeTributario);
         await _empresaRepository.AdicionarAsync(empresa);
@@ -74,6 +89,24 @@ public class EmpresaService : IEmpresaService
         empresa.Desativar();
         _empresaRepository.Atualizar(empresa);
         await _empresaRepository.SalvarAsync();
+    }
+
+    public async Task<EmpresaResponse> ReativarAsync(Guid id)
+    {
+        var empresa = await _empresaRepository.ObterPorIdAsync(id)
+            ?? throw new KeyNotFoundException($"Empresa '{id}' não encontrada.");
+
+        if (empresa.Ativo)
+            throw new InvalidOperationException($"Empresa '{empresa.RazaoSocial}' já está ativa.");
+
+        empresa.Reativar();
+        _empresaRepository.Atualizar(empresa);
+        await _empresaRepository.SalvarAsync();
+
+        // Gera obrigações dos próximos 12 meses (empresa volta do zero)
+        await GerarObrigacoesIniciais(empresa);
+
+        return _mapper.Map<EmpresaResponse>(empresa);
     }
 
     private async Task GerarObrigacoesIniciais(Empresa empresa)

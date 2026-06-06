@@ -605,7 +605,7 @@ BMAD é uma abordagem onde o desenvolvedor atua como **orquestrador** e a IA com
 
 1. **Business** — O problema de negócio é definido pelo desenvolvedor
 2. **Model** — A IA analisa os requisitos e propõe o modelo de dados e regras de negócio
-3. **Architecture** — A IA projeta a arquitetura (camadas, contratos de interface, estrutura de pastas)
+3. **Architecture** — O desenvolvedor projeta a arquitetura (camadas, contratos de interface, estrutura de pastas)
 4. **Development** — A IA executa a implementação camada por camada, guiada e corrigida pelo desenvolvedor
 
 ### Aplicação neste projeto
@@ -631,6 +631,8 @@ O desenvolvedor descreveu o problema de negócio e as restrições técnicas do 
 
 **Onde o desenvolvedor teve que guiar**
 - Convenção de DTO do projeto (não é um padrão universal)
+- Montagem de Arquitetura e diretrizes de padrões de código
+- Padrão de uso do typescript e limpeza de código
 - `DateTime Kind=Unspecified` como bug latente — não aparece no build, só em runtime com PostgreSQL
 - Identificação de que o seed pulava obrigações em reinicializações
 - Decisão de estrutura monorepo vs. repositórios separados

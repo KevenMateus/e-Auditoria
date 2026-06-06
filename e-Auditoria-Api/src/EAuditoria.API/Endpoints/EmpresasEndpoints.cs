@@ -19,6 +19,16 @@ public static class EmpresasEndpoints
         .WithDescription("Retorna todas as empresas cadastradas e ativas, ordenadas por razão social.")
         .Produces<IEnumerable<EmpresaResponse>>(StatusCodes.Status200OK);
 
+        group.MapGet("/inativas", async (IEmpresaService service) =>
+        {
+            var empresas = await service.ListarInativasAsync();
+            return Results.Ok(empresas);
+        })
+        .WithTags("Empresas")
+        .WithSummary("Lista todas as empresas inativas.")
+        .WithDescription("Retorna empresas desativadas que podem ser reativadas.")
+        .Produces<IEnumerable<EmpresaResponse>>(StatusCodes.Status200OK);
+
         group.MapGet("/{id:guid}", async (Guid id, IEmpresaService service) =>
         {
             var empresa = await service.ObterPorIdAsync(id);
@@ -40,12 +50,13 @@ public static class EmpresasEndpoints
         .WithDescription("""
             Cadastra uma empresa com razão social, CNPJ e regime tributário.
 
-            O regime tributário define automaticamente quais obrigações fiscais serão geradas
-            ao acionar o calendário (DAS, DCTF, EFD, eSocial, SPED, DIRF, RAIS etc.).
+            Se o CNPJ pertencer a uma empresa inativa, retorna **409 Conflict** com
+            `empresaInativaId` e `razaoSocial` para permitir reativação direta.
 
-            O CNPJ deve ser único no sistema (somente dígitos, 14 caracteres).
+            O CNPJ deve ser único entre empresas ativas (somente dígitos, 14 caracteres).
             """)
         .Produces<EmpresaResponse>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapPut("/{id:guid}", async (Guid id, [FromBody] AtualizarEmpresaRequest request, IEmpresaService service) =>
@@ -63,6 +74,21 @@ public static class EmpresasEndpoints
             """)
         .Produces<EmpresaResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/{id:guid}/reativar", async (Guid id, IEmpresaService service) =>
+        {
+            var empresa = await service.ReativarAsync(id);
+            return Results.Ok(empresa);
+        })
+        .WithTags("Empresas")
+        .WithSummary("Reativa uma empresa inativa.")
+        .WithDescription("""
+            Reativa uma empresa previamente desativada, tornando-a ativa novamente.
+            Gera automaticamente as obrigações dos próximos 12 meses.
+            """)
+        .Produces<EmpresaResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapDelete("/{id:guid}", async (Guid id, IEmpresaService service) =>
         {

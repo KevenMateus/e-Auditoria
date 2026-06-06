@@ -38,4 +38,10 @@ public class Empresa
         Ativo = false;
         AtualizadoEm = DateTime.UtcNow;
     }
+
+    public void Reativar()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

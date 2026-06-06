@@ -26,4 +26,13 @@ public class EmpresaRepository : BaseRepository<Empresa>, IEmpresaRepository
             .AsNoTracking()
             .ToListAsync();
 
+    public async Task<IEnumerable<Empresa>> ObterInativasAsync() =>
+        await DbSet
+            .Where(e => !e.Ativo)
+            .OrderBy(e => e.RazaoSocial)
+            .AsNoTracking()
+            .ToListAsync();
+
+    public async Task<Empresa?> ObterPorCnpjAsync(string cnpj) =>
+        await DbSet.FirstOrDefaultAsync(e => e.Cnpj == cnpj);
 }
