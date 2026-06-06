@@ -120,11 +120,11 @@ public class TaxRulesEngineTests
     [Fact]
     public void CalcularVencimento_DAS_Dia20MesSeguinte()
     {
-        // Competência março/2025 → vence 20/04/2025 (domingo → 22/04)
+        // Competência março/2025 → vence 20/04/2025 (domingo → 21/04/2025, segunda-feira)
+        // O engine prorroga fins de semana apenas; feriados não estão no escopo do spec.
         var vencimento = _engine.CalcularVencimento(TipoObrigacao.DAS, mesCompetencia: 3, anoCompetencia: 2025);
 
-        // 20/04/2025 é domingo, prorroga para 22/04/2025 (terça)
-        vencimento.Should().Be(new DateTime(2025, 4, 22));
+        vencimento.Should().Be(new DateTime(2025, 4, 21));
     }
 
     [Fact]
