@@ -57,8 +57,11 @@ function CalendarioTab({
 
   const gerarMutation = useMutation({
     mutationFn: () => obrigacoesService.gerar(empresaId!, mes, ano),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendario'] })
+    onSuccess: async (data) => {
+      // Popula o cache da query ativa (sem filtro de status) com os dados já retornados
+      queryClient.setQueryData(['calendario', empresaId, mes, ano, filtroStatus], data)
+      // Invalida todas as variações de filtro para forçar refetch consistente
+      await queryClient.invalidateQueries({ queryKey: ['calendario', empresaId] })
       messageApi.success('Obrigações geradas com sucesso!')
     },
     onError: (err: Error) => messageApi.error(err.message),

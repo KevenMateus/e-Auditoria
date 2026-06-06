@@ -71,6 +71,11 @@ public class ObrigacaoService : IObrigacaoService
             await _obrigacaoRepository.SalvarAsync();
 
         var resultado = await _obrigacaoRepository.ObterPorEmpresaEMesAsync(empresa.Id, request.Mes, request.Ano);
+
+        var hoje = DateTime.UtcNow;
+        foreach (var o in resultado)
+            o.RecalcularStatus(hoje);
+
         return _mapper.Map<IEnumerable<ObrigacaoResponse>>(resultado);
     }
 

@@ -14,13 +14,18 @@ public static class ObrigacoesEndpoints
             [FromQuery] Guid empresaId,
             [FromQuery] int mes,
             [FromQuery] int ano,
-            [FromQuery] StatusObrigacao? status,
+            [FromQuery] string? status,
             IObrigacaoService service) =>
         {
             if (mes < 1 || mes > 12)
                 return Results.BadRequest(new { mensagem = "O parâmetro 'mes' deve estar entre 1 e 12." });
 
-            var obrigacoes = await service.ObterCalendarioAsync(empresaId, mes, ano, status);
+            StatusObrigacao? filtroStatus = null;
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<StatusObrigacao>(status, ignoreCase: true, out var parsed))
+                filtroStatus = parsed;
+
+            var obrigacoes = await service.ObterCalendarioAsync(empresaId, mes, ano, filtroStatus);
             return Results.Ok(obrigacoes);
         })
         .WithTags("Obrigações")
