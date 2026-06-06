@@ -9,7 +9,7 @@ Gerencia empresas, calendário fiscal, entregas e alertas de vencimento.
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Runtime | .NET 9 / ASP.NET Core |
+| Runtime | .NET 9 / ASP.NET Core Minimal APIs |
 | ORM | Entity Framework Core 9 |
 | Banco | PostgreSQL 16 |
 | Logs | Serilog (Console sink) |
@@ -28,7 +28,7 @@ src/
 ├── EAuditoria.Domain/          # Entidades, enums, interfaces de repositório
 ├── EAuditoria.Application/     # DTOs, serviços, AutoMapper profiles, TaxRulesEngine
 ├── EAuditoria.Infrastructure/  # EF Core, repositórios, migrations, seed
-└── EAuditoria.API/             # Controllers, middleware, DI wiring, Program.cs
+└── EAuditoria.API/             # Endpoints (Minimal APIs), middleware, DI, Program.cs
 tests/
 └── EAuditoria.Tests/           # Testes unitários (engine + services)
 ```
@@ -39,8 +39,8 @@ O domínio fiscal é rico em regras — a `TaxRulesEngine` precisa ser testável
 
 ### Decisões técnicas
 
-**Controllers MVC (não Minimal APIs)**  
-O edital pede Minimal APIs, mas com 5 controllers e necessidade de documentação Swagger XML automática, o MVC `ControllerBase` foi mais produtivo e legível. A separação de responsabilidades é equivalente.
+**Minimal APIs (.NET 9)**  
+Todos os endpoints são registrados como delegates em `Program.cs` via grupos (`MapGroup`) com extensões estáticas por recurso. Cada arquivo em `Endpoints/` exporta um método de extensão sobre `RouteGroupBuilder`, mantendo a separação de responsabilidades sem a cerimônia de `ControllerBase`. A autenticação usa `.RequireAuthorization()` no grupo, e o Swagger é alimentado por `.WithTags()`, `.WithSummary()` e `.WithOpenApi()` em cada endpoint.
 
 **DTOs como `class` com `get; set;`**  
 Garante compatibilidade com System.Text.Json sem configurações adicionais e segue o padrão de inicialização por propriedade, igual às entidades de domínio.
@@ -182,9 +182,9 @@ src/
 │   └── Repositories/       # BaseRepository<T> + implementações
 │
 └── EAuditoria.API/
-    ├── Controllers/        # 5 controllers com XML docs para Swagger
+    ├── Endpoints/          # Minimal API handlers por recurso (Auth, Empresas, Obrigações...)
     ├── Dependencies/       # DI separado por responsabilidade
     ├── Extensions/         # ServiceCollectionExtensions (ponto de entrada)
     ├── Middleware/         # GlobalExceptionMiddleware
-    └── Program.cs
+    └── Program.cs          # MapGroup + endpoint registration
 ```

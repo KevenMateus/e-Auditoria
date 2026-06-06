@@ -18,7 +18,4 @@ public class EntregaRepository : BaseRepository<EntregaObrigacao>, IEntregaRepos
             .AsNoTracking()
             .ToListAsync();
 
-    public async Task<EntregaObrigacao?> ObterPorObrigacaoAsync(Guid obrigacaoId) =>
-        await DbSet
-            .FirstOrDefaultAsync(e => e.ObrigacaoId == obrigacaoId);
 }

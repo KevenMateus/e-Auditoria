@@ -29,8 +29,4 @@ public class Usuario
         UltimoLoginEm = DateTime.UtcNow;
     }
 
-    public void AtualizarSenha(string novoHash)
-    {
-        SenhaHash = novoHash;
-    }
 }

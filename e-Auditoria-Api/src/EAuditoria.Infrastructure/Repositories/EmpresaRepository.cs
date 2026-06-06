@@ -11,7 +11,7 @@ public class EmpresaRepository : BaseRepository<Empresa>, IEmpresaRepository
 
     public async Task<bool> ExisteCnpjAsync(string cnpj, Guid? excluirId = null)
     {
-        var query = DbSet.Where(e => e.Cnpj == cnpj);
+        var query = DbSet.Where(e => e.Cnpj == cnpj && e.Ativo);
 
         if (excluirId.HasValue)
             query = query.Where(e => e.Id != excluirId.Value);
@@ -26,9 +26,4 @@ public class EmpresaRepository : BaseRepository<Empresa>, IEmpresaRepository
             .AsNoTracking()
             .ToListAsync();
 
-    public async Task<Empresa?> ObterComObrigacoesAsync(Guid id) =>
-        await DbSet
-            .Include(e => e.Obrigacoes)
-                .ThenInclude(o => o.Entrega)
-            .FirstOrDefaultAsync(e => e.Id == id);
 }

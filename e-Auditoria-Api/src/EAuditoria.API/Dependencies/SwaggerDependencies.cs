@@ -10,7 +10,7 @@ public static class SwaggerDependencies
     {
         services.AddEndpointsApiExplorer();
 
-        services.AddSwaggerGen(c =>
+        services.AddSwaggerGen(static c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
             {
@@ -22,6 +22,15 @@ public static class SwaggerDependencies
                     API RESTful para gestão tributária de escritórios contábeis.
                     Permite cadastrar empresas, gerar calendários de obrigações fiscais,
                     registrar entregas e monitorar alertas de vencimento.
+
+                    ### Fluxo básico de uso
+                    1. **POST /api/auth/login** — obtenha um token JWT
+                    2. Clique em **Authorize 🔒** e cole o token
+                    3. **POST /api/empresas** — cadastre uma empresa
+                    4. **POST /api/obrigacoes/gerar** — gere as obrigações do mês
+                    5. **GET /api/obrigacoes/calendario** — visualize o calendário
+                    6. **POST /api/entregas/obrigacoes/{id}** — registre uma entrega
+                    7. **GET /api/dashboard/alertas** — monitore alertas de vencimento
 
                     ### Regimes Tributários suportados
                     | Valor | Descrição |
@@ -38,6 +47,12 @@ public static class SwaggerDependencies
                     | `Atrasada` | Vencimento passado, não entregue |
                     | `Entregue` | Entrega registrada com data de conclusão |
                     | `NaoAplicavel` | Não se aplica ao regime tributário da empresa |
+
+                    ### Autenticação
+                    Todos os endpoints (exceto `/api/auth/login`) exigem o header:
+                    ```
+                    Authorization: Bearer {token}
+                    ```
                     """,
                 Contact = new OpenApiContact
                 {
@@ -75,10 +90,7 @@ public static class SwaggerDependencies
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             if (File.Exists(xmlPath))
-                c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
-
-            c.OrderActionsBy(api =>
-                $"{api.ActionDescriptor.RouteValues["controller"]}_{api.RelativePath}_{api.HttpMethod}");
+                c.IncludeXmlComments(xmlPath);
 
             c.UseInlineDefinitionsForEnums();
         });
@@ -92,15 +104,15 @@ public static class SwaggerDependencies
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "e-Auditoria API v1");
-            c.RoutePrefix             = "swagger";
-            c.DocumentTitle           = "e-Auditoria API";
+            c.RoutePrefix              = "swagger";
+            c.DocumentTitle            = "e-Auditoria API — Painel de Obrigações Acessórias";
             c.DefaultModelsExpandDepth(-1);
-            c.DefaultModelExpandDepth(2);
+            c.DefaultModelExpandDepth(3);
             c.DisplayRequestDuration();
-            c.EnableDeepLinking(); 
-            c.EnableFilter(); 
+            c.EnableDeepLinking();
+            c.EnableFilter();
+            c.EnableTryItOutByDefault(); 
         });
-
         return app;
     }
 }

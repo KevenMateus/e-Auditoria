@@ -1,4 +1,5 @@
 using EAuditoria.API.Dependencies;
+using EAuditoria.API.Endpoints;
 using EAuditoria.API.Extensions;
 using EAuditoria.API.Middleware;
 using EAuditoria.Infrastructure.Data.Seed;
@@ -15,20 +16,24 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-builder.Services.AddControllers()
-    .AddJsonOptions(opts =>
-    {
-        opts.JsonSerializerOptions.Converters.Add(
-            new System.Text.Json.Serialization.JsonStringEnumConverter());
-        opts.JsonSerializerOptions.DefaultIgnoreCondition =
-            System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-    });
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter());
+    opts.SerializerOptions.DefaultIgnoreCondition =
+        System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+});
 
 builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddApplication()
     .AddSwaggerDocumentation()
     .AddCorsPolicy();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+});
 
 var app = builder.Build();
 
@@ -73,6 +78,13 @@ app.UseSwaggerDocumentation();
 app.UseCors(CorsDependencies.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+
+app.MapGroup("/api/auth").MapAuthEndpoints();
+
+app.MapGroup("/api/empresas").RequireAuthorization().MapEmpresasEndpoints();
+app.MapGroup("/api/obrigacoes").RequireAuthorization().MapObrigacoesEndpoints();
+app.MapGroup("/api/entregas").RequireAuthorization().MapEntregasEndpoints();
+app.MapGroup("/api/dashboard").RequireAuthorization().MapDashboardEndpoints();
+app.MapGroup("/api/admin").RequireAuthorization("Admin").MapAdminEndpoints();
 
 app.Run();

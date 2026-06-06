@@ -59,7 +59,7 @@ Sistema SaaS de gestão tributária para escritórios contábeis. Permite contro
                           │ HTTP interno (porta 8080)
 ┌─────────────────────────▼───────────────────────────┐
 │           ASP.NET Core 9 (.NET 9)                    │
-│  Controllers → Services → Repositories → EF Core    │
+│  Minimal API Endpoints → Services → Repositories → EF Core │
 └─────────────────────────┬───────────────────────────┘
                           │ TCP (porta 5432)
 ┌─────────────────────────▼───────────────────────────┐
@@ -83,7 +83,7 @@ e-auditoria/
 │   │   ├── EAuditoria.Domain/         ← entidades, enums, interfaces de repositório
 │   │   ├── EAuditoria.Application/    ← DTOs, serviços, engine, interfaces de serviço
 │   │   ├── EAuditoria.Infrastructure/ ← EF Core, repositórios, seed, migrations
-│   │   └── EAuditoria.API/            ← controllers, DI, middleware, Dockerfile
+│   │   └── EAuditoria.API/            ← Minimal API endpoints, DI, middleware, Dockerfile
 │   ├── tests/
 │   │   └── EAuditoria.Tests/          ← xUnit: engine + serviços
 │   └── README.md
@@ -105,9 +105,9 @@ e-auditoria/
 
 ## Decisões técnicas
 
-### Por que Clean Architecture e não Minimal APIs puras?
+### Por que Minimal APIs em vez de MVC Controllers?
 
-O escopo do case exige separação clara entre regras de negócio (cálculo de obrigações e vencimentos) e infraestrutura (banco, HTTP). Colocar essa lógica em handlers de Minimal API dificultaria o teste unitário da engine tributária sem subir banco ou contexto HTTP. A Clean Architecture isola a `TaxRulesEngine` no Application layer, tornando-a testável com `new TaxRulesEngine()`.
+O edital (.NET 9) exige Minimal APIs. A implementação usa `MapGroup` por recurso, com cada grupo de endpoints em seu próprio arquivo em `Endpoints/` — extensões de `RouteGroupBuilder`. Isso mantém a separação de responsabilidades equivalente ao padrão MVC sem a cerimônia de `ControllerBase`. A lógica de negócio permanece isolada na camada Application (`TaxRulesEngine`, serviços), totalmente testável sem dependência HTTP ou banco.
 
 ### Por que 4 projetos e não 1?
 
@@ -116,7 +116,7 @@ O escopo do case exige separação clara entre regras de negócio (cálculo de o
 | `Domain` | Entidades, enums, interfaces de repositório — zero dependências externas |
 | `Application` | Regras de negócio, DTOs, AutoMapper, serviços — depende só do Domain |
 | `Infrastructure` | EF Core, Npgsql, repositórios concretos, seed — depende de Application |
-| `API` | Controllers, DI, middleware, Swagger — orquestra os três anteriores |
+| `API` | Minimal API endpoints, DI, middleware, Swagger — orquestra os três anteriores |
 
 Isso garante que `Domain` e `Application` nunca conheçam EF Core ou ASP.NET — a regra de negócio é agnóstica de framework.
 
@@ -150,7 +150,7 @@ Todo estado relevante é estado de servidor (empresas, obrigações, alertas), g
 HTTP Request
   → GlobalExceptionMiddleware (captura exceções não tratadas)
   → JWT Bearer Middleware (valida token)
-  → Controller (valida model binding, chama Service)
+  → Minimal API Endpoint delegate (binding automático de parâmetros, chama Service)
   → Service (lógica de aplicação, AutoMapper)
   → Repository (LINQ + EF Core)
   → AppDbContext
@@ -364,7 +364,7 @@ Criado automaticamente pelo `DatabaseSeeder` na primeira inicialização. Hash B
 
 ### Proteção por perfil
 
-`AdminController` requer `[Authorize(Roles = "Admin")]`. Os demais controllers requerem apenas `[Authorize]` — qualquer usuário autenticado tem acesso.
+O grupo `/api/admin` usa `.RequireAuthorization("Admin")` (policy que exige role `Admin`). Os demais grupos usam `.RequireAuthorization()` — qualquer usuário autenticado tem acesso. O endpoint `/api/auth/login` é `.AllowAnonymous()`.
 
 ---
 
@@ -622,6 +622,7 @@ O desenvolvedor descreveu o problema de negócio e as restrições técnicas do 
 | `DateTime Kind=Unspecified` no PostgreSQL | `.Date` retorna `Kind=Unspecified` | Substituído por `new DateTime(..., DateTimeKind.Utc)` |
 | Seed pulando obrigações em restart | Verificação de fase única | Refatorado para duas fases independentes |
 | Ambiguidade em `AddInfrastructure` | Dois métodos com mesmo nome | Renomeado para `AddInfrastructureServices` |
+| Controllers MVC gerados inicialmente | IA não priorizou o requisito do edital | Migrado para Minimal APIs com `MapGroup` + extensões por recurso |
 
 **Onde a IA contribuiu mais**
 - Suite de testes com ~40 cenários cobrindo edge cases de regime × obrigação × vencimento

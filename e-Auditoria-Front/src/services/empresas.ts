@@ -5,9 +5,6 @@ export const empresasService = {
   listar: () =>
     api.get<Empresa[]>('/empresas').then((r) => r.data),
 
-  obterPorId: (id: string) =>
-    api.get<Empresa>(`/empresas/${id}`).then((r) => r.data),
-
   criar: (data: CriarEmpresaRequest) =>
     api.post<Empresa>('/empresas', data).then((r) => r.data),
 
