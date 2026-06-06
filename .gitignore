@@ -20,3 +20,5 @@ postgres_data/
 **/appsettings.Production.json
 **/*.pfx
 **/*.p12
+
+.claude
