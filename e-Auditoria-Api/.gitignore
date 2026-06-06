@@ -1,0 +1,25 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+## Migrations geradas (manter pasta, ignorar arquivos gerados pelo EF)
+# src/EAuditoria.Infrastructure/Data/Migrations/*.cs
+
+## Logs
+logs/
+*.log
+
+## Docker
+.dockerignore
+
+## OS
+.DS_Store
+Thumbs.db
+
+## env
+.env
+*.env.local

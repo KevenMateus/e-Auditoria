@@ -1,0 +1,36 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --color-primary: #1565C0;
+  --color-primary-hover: #1E88E5;
+  --color-cyan: #00ACC1;
+  --color-navy: #0D1B2A;
+  --color-success: #2E7D32;
+  --color-warning: #F57F17;
+  --color-error: #C62828;
+  --color-surface: #F5F7FA;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--color-surface);
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar fina */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+.ant-layout-sider {
+  background: var(--color-navy) !important;
+}
+
+.ant-menu-dark {
+  background: var(--color-navy) !important;
+}

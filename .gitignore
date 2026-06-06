@@ -1,0 +1,22 @@
+# .NET
+**/bin/
+**/obj/
+**/*.user
+**/.vs/
+
+# Node
+**/node_modules/
+**/dist/
+
+# Docker
+postgres_data/
+
+# IDE
+.idea/
+.vscode/
+*.DotSettings.user
+
+# Segurança — nunca commitar
+**/appsettings.Production.json
+**/*.pfx
+**/*.p12
