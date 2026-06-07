@@ -1,7 +1,6 @@
 using AutoMapper;
 using EAuditoria.Application.DTOs.Request;
 using EAuditoria.Application.DTOs.Response;
-using EAuditoria.Application.Engine;
 using EAuditoria.Application.Exceptions;
 using EAuditoria.Application.Interfaces.Services;
 using EAuditoria.Domain.Entities;
@@ -12,19 +11,16 @@ namespace EAuditoria.Application.Services;
 public class EmpresaService : IEmpresaService
 {
     private readonly IEmpresaRepository _empresaRepository;
-    private readonly IObrigacaoRepository _obrigacaoRepository;
-    private readonly ITaxRulesEngine _taxRulesEngine;
+    private readonly IObrigacaoService _obrigacaoService;
     private readonly IMapper _mapper;
 
     public EmpresaService(
         IEmpresaRepository empresaRepository,
-        IObrigacaoRepository obrigacaoRepository,
-        ITaxRulesEngine taxRulesEngine,
+        IObrigacaoService obrigacaoService,
         IMapper mapper)
     {
         _empresaRepository = empresaRepository;
-        _obrigacaoRepository = obrigacaoRepository;
-        _taxRulesEngine = taxRulesEngine;
+        _obrigacaoService = obrigacaoService;
         _mapper = mapper;
     }
 
@@ -46,18 +42,19 @@ public class EmpresaService : IEmpresaService
         return empresa is null ? null : _mapper.Map<EmpresaResponse>(empresa);
     }
 
+    public async Task<Empresa?> ObterEntidadePorIdAsync(Guid id) =>
+        await _empresaRepository.ObterPorIdAsync(id);
+
     public async Task<EmpresaResponse> CriarAsync(CriarEmpresaRequest request)
     {
         var cnpjLimpo = LimparCnpj(request.Cnpj);
 
-        // Verifica se o CNPJ já existe (ativa ou inativa)
         var existente = await _empresaRepository.ObterPorCnpjAsync(cnpjLimpo);
         if (existente is not null)
         {
             if (existente.Ativo)
                 throw new InvalidOperationException($"CNPJ '{request.Cnpj}' já está cadastrado em uma empresa ativa.");
 
-            // CNPJ pertence a empresa inativa — informa ao cliente para que possa reativar
             throw new EmpresaInativaException(existente.Id, existente.RazaoSocial, request.Cnpj);
         }
 
@@ -103,7 +100,6 @@ public class EmpresaService : IEmpresaService
         _empresaRepository.Atualizar(empresa);
         await _empresaRepository.SalvarAsync();
 
-        // Gera obrigações dos próximos 12 meses (empresa volta do zero)
         await GerarObrigacoesIniciais(empresa);
 
         return _mapper.Map<EmpresaResponse>(empresa);
@@ -120,24 +116,15 @@ public class EmpresaService : IEmpresaService
             periodos.Add((data.Year, data.Month));
         }
 
+        // Garante que janeiro (obrigações anuais) sempre seja incluído
         periodos.Add((hoje.Year, 1));
 
         foreach (var (ano, mes) in periodos.DistinctBy(p => (p.Ano, p.Mes)))
-        {
-            var geradas = _taxRulesEngine.GerarObrigacoes(empresa, mes, ano);
-            foreach (var obrigacao in geradas)
-            {
-                var jaExiste = await _obrigacaoRepository.ExisteObrigacaoAsync(
-                    empresa.Id, obrigacao.Tipo, mes, ano);
+            await _obrigacaoService.GerarParaEmpresaAsync(empresa, mes, ano);
 
-                if (!jaExiste)
-                    await _obrigacaoRepository.AdicionarAsync(obrigacao);
-            }
-        }
-
-        await _obrigacaoRepository.SalvarAsync();
+        await _obrigacaoService.SalvarAsync();
     }
 
     private static string LimparCnpj(string cnpj) =>
-        new string(cnpj.Where(char.IsDigit).ToArray());
+        new string(cnpj.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
 }

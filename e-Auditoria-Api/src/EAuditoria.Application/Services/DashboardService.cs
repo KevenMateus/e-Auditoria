@@ -1,23 +1,20 @@
 using EAuditoria.Application.DTOs.Response;
-using EAuditoria.Application.Helpers;
 using EAuditoria.Application.Interfaces.Services;
-using EAuditoria.Domain.Enums;
-using EAuditoria.Domain.Interfaces;
 
 namespace EAuditoria.Application.Services;
 
 public class DashboardService : IDashboardService
 {
-    private readonly IObrigacaoRepository _obrigacaoRepository;
+    private readonly IObrigacaoService _obrigacaoService;
 
-    public DashboardService(IObrigacaoRepository obrigacaoRepository)
+    public DashboardService(IObrigacaoService obrigacaoService)
     {
-        _obrigacaoRepository = obrigacaoRepository;
+        _obrigacaoService = obrigacaoService;
     }
 
     public async Task<DashboardResponse> ObterAsync(int mes, int ano)
     {
-        var counts = await _obrigacaoRepository.ObterContagensDashboardAsync(mes, ano);
+        var counts = await _obrigacaoService.ObterContagensDashboardAsync(mes, ano);
 
         return new DashboardResponse
         {
@@ -33,29 +30,12 @@ public class DashboardService : IDashboardService
 
     public async Task<IEnumerable<AlertaObrigacaoResponse>> ObterAlertasAsync()
     {
-        var hoje = DateTime.UtcNow;
+        var vencendo  = await _obrigacaoService.ObterVencendoEmDiasAsync(30);
+        var atrasadas = await _obrigacaoService.ObterAtrasadasAsync();
 
-        var vencendo  = await _obrigacaoRepository.ObterVencendoEmDiasAsync(30);
-        var atrasadas = await _obrigacaoRepository.ObterAtrasadasAsync();
-
-        var alertas = vencendo
-            .UnionBy(atrasadas, o => o.Id)
-            .Select(o => new AlertaObrigacaoResponse
-            {
-                ObrigacaoId      = o.Id,
-                EmpresaId        = o.EmpresaId,
-                EmpresaNome      = o.Empresa?.RazaoSocial ?? string.Empty,
-                Cnpj             = o.Empresa?.Cnpj ?? string.Empty,
-                Tipo             = o.Tipo,
-                TipoDescricao    = o.Tipo.Descricao(),
-                Vencimento       = o.Vencimento,
-                DiasRestantes    = (int)(o.Vencimento.Date - hoje.Date).TotalDays,
-                Status           = o.Status,
-                StatusDescricao  = o.Status.Descricao()
-            })
+        return vencendo
+            .UnionBy(atrasadas, o => o.ObrigacaoId)
             .OrderBy(a => a.DiasRestantes)
             .ToList();
-
-        return alertas;
     }
 }

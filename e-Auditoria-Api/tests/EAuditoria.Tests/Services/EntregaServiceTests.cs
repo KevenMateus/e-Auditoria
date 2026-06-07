@@ -1,4 +1,5 @@
 using EAuditoria.Application.DTOs.Request;
+using EAuditoria.Application.Interfaces.Services;
 using EAuditoria.Application.Services;
 using EAuditoria.Domain.Entities;
 using EAuditoria.Domain.Enums;
@@ -12,7 +13,7 @@ namespace EAuditoria.Tests.Services;
 public class EntregaServiceTests
 {
     private readonly Mock<IEntregaRepository> _entregaRepo = new();
-    private readonly Mock<IObrigacaoRepository> _obrigacaoRepo = new();
+    private readonly Mock<IObrigacaoService> _obrigacaoService = new();
     private readonly EntregaService _service;
 
     private static readonly Empresa _empresa =
@@ -22,13 +23,9 @@ public class EntregaServiceTests
     {
         _service = new EntregaService(
             _entregaRepo.Object,
-            _obrigacaoRepo.Object,
+            _obrigacaoService.Object,
             MapperFixture.Create());
     }
-
-    // ----------------------------------------------------------------
-    // RegistrarAsync
-    // ----------------------------------------------------------------
 
     [Fact]
     public async Task Registrar_ComObrigacaoPendente_DeveMarcarComoEntregue()
@@ -36,7 +33,8 @@ public class EntregaServiceTests
         var obrigacao = CriarObrigacao(StatusObrigacao.Pendente);
         var request = new RegistrarEntregaRequest { DataEntrega = DateTime.UtcNow, Observacao = "Entregue com sucesso" };
 
-        _obrigacaoRepo.Setup(r => r.ObterComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.ObterEntidadeComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.AtualizarEntidade(It.IsAny<ObrigacaoAcessoria>()));
         _entregaRepo.Setup(r => r.AdicionarAsync(It.IsAny<EntregaObrigacao>())).Returns(Task.CompletedTask);
         _entregaRepo.Setup(r => r.SalvarAsync()).ReturnsAsync(1);
 
@@ -48,7 +46,7 @@ public class EntregaServiceTests
 
         obrigacao.Status.Should().Be(StatusObrigacao.Entregue);
 
-        _obrigacaoRepo.Verify(r => r.Atualizar(It.IsAny<ObrigacaoAcessoria>()), Times.Once);
+        _obrigacaoService.Verify(s => s.AtualizarEntidade(It.IsAny<ObrigacaoAcessoria>()), Times.Once);
         _entregaRepo.Verify(r => r.AdicionarAsync(It.IsAny<EntregaObrigacao>()), Times.Once);
         _entregaRepo.Verify(r => r.SalvarAsync(), Times.Once);
     }
@@ -62,7 +60,8 @@ public class EntregaServiceTests
 
         var request = new RegistrarEntregaRequest { DataEntrega = DateTime.UtcNow };
 
-        _obrigacaoRepo.Setup(r => r.ObterComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.ObterEntidadeComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.AtualizarEntidade(It.IsAny<ObrigacaoAcessoria>()));
         _entregaRepo.Setup(r => r.AdicionarAsync(It.IsAny<EntregaObrigacao>())).Returns(Task.CompletedTask);
         _entregaRepo.Setup(r => r.SalvarAsync()).ReturnsAsync(1);
 
@@ -75,7 +74,7 @@ public class EntregaServiceTests
     [Fact]
     public async Task Registrar_QuandoObrigacaoNaoExiste_DeveLancarKeyNotFoundException()
     {
-        _obrigacaoRepo.Setup(r => r.ObterComEntregaAsync(It.IsAny<Guid>()))
+        _obrigacaoService.Setup(s => s.ObterEntidadeComEntregaAsync(It.IsAny<Guid>()))
             .ReturnsAsync((ObrigacaoAcessoria?)null);
 
         var act = async () => await _service.RegistrarAsync(
@@ -90,7 +89,7 @@ public class EntregaServiceTests
         var obrigacao = CriarObrigacao(StatusObrigacao.Pendente);
         obrigacao.MarcarComoEntregue();
 
-        _obrigacaoRepo.Setup(r => r.ObterComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.ObterEntidadeComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
 
         var act = async () => await _service.RegistrarAsync(
             obrigacao.Id, new RegistrarEntregaRequest { DataEntrega = DateTime.UtcNow });
@@ -105,7 +104,8 @@ public class EntregaServiceTests
         var obrigacao = CriarObrigacao(StatusObrigacao.Pendente);
         var request = new RegistrarEntregaRequest { DataEntrega = DateTime.UtcNow, Observacao = "Observação de teste" };
 
-        _obrigacaoRepo.Setup(r => r.ObterComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.ObterEntidadeComEntregaAsync(obrigacao.Id)).ReturnsAsync(obrigacao);
+        _obrigacaoService.Setup(s => s.AtualizarEntidade(It.IsAny<ObrigacaoAcessoria>()));
         _entregaRepo.Setup(r => r.AdicionarAsync(It.IsAny<EntregaObrigacao>())).Returns(Task.CompletedTask);
         _entregaRepo.Setup(r => r.SalvarAsync()).ReturnsAsync(1);
 

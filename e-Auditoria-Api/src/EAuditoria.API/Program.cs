@@ -26,7 +26,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 
 builder.Services
     .AddInfrastructure(builder.Configuration)
-    .AddApplication()
+    .AddApplication(builder.Configuration)
     .AddSwaggerDocumentation()
     .AddCorsPolicy();
 

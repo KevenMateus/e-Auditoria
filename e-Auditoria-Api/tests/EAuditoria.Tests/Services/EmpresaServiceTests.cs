@@ -1,5 +1,5 @@
 using EAuditoria.Application.DTOs.Request;
-using EAuditoria.Application.Engine;
+using EAuditoria.Application.Interfaces.Services;
 using EAuditoria.Application.Services;
 using EAuditoria.Domain.Entities;
 using EAuditoria.Domain.Enums;
@@ -13,26 +13,23 @@ namespace EAuditoria.Tests.Services;
 public class EmpresaServiceTests
 {
     private readonly Mock<IEmpresaRepository> _empresaRepo = new();
-    private readonly Mock<IObrigacaoRepository> _obrigacaoRepo = new();
-    private readonly Mock<ITaxRulesEngine> _engine = new();
+    private readonly Mock<IObrigacaoService> _obrigacaoService = new();
     private readonly EmpresaService _service;
 
     public EmpresaServiceTests()
     {
+        _obrigacaoService
+            .Setup(s => s.GerarParaEmpresaAsync(It.IsAny<Empresa>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        _obrigacaoService
+            .Setup(s => s.SalvarAsync())
+            .Returns(Task.CompletedTask);
+
         _service = new EmpresaService(
             _empresaRepo.Object,
-            _obrigacaoRepo.Object,
-            _engine.Object,
+            _obrigacaoService.Object,
             MapperFixture.Create());
-
-        _engine.Setup(e => e.GerarObrigacoes(It.IsAny<Empresa>(), It.IsAny<int>(), It.IsAny<int>()))
-               .Returns([]);
-
-        _obrigacaoRepo.Setup(r => r.ExisteObrigacaoAsync(
-                It.IsAny<Guid>(), It.IsAny<TipoObrigacao>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(false);
-
-        _obrigacaoRepo.Setup(r => r.SalvarAsync()).ReturnsAsync(0);
     }
 
     // ----------------------------------------------------------------
@@ -178,8 +175,12 @@ public class EmpresaServiceTests
 
         await _service.CriarAsync(request);
 
-        _engine.Verify(e => e.GerarObrigacoes(It.IsAny<Empresa>(), It.IsAny<int>(), It.IsAny<int>()),
+        // Deve chamar GerarParaEmpresaAsync pelo menos 12 vezes (um por mês)
+        _obrigacaoService.Verify(
+            s => s.GerarParaEmpresaAsync(It.IsAny<Empresa>(), It.IsAny<int>(), It.IsAny<int>()),
             Times.AtLeast(12));
+
+        _obrigacaoService.Verify(s => s.SalvarAsync(), Times.Once);
     }
 
     // ----------------------------------------------------------------

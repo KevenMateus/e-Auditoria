@@ -40,6 +40,8 @@ Sistema SaaS de gestão tributária para escritórios contábeis. Permite contro
 | Autenticação JWT | Login com token Bearer, proteção de rotas no front e no back |
 | Seed automático | 10 empresas + ~500 obrigações de demonstração na primeira inicialização |
 | Geração automática | Ao cadastrar empresa, obrigações de 12 meses futuros são geradas imediatamente |
+| CNPJ alfanumérico | Suporte ao novo formato Receita Federal (ex.: `AB.CDE.FGH/0001-99`) — 14 chars alfanuméricos |
+| Reativação de empresa | Empresa inativada pode ser reativada com geração automática das obrigações futuras |
 
 ---
 
@@ -378,6 +380,8 @@ O grupo `/api/admin` usa `.RequireAuthorization("Admin")` (policy que exige role
 | `api` | Multi-stage .NET 9 SDK → ASP.NET runtime | 8080 | 8080 |
 | `frontend` | Multi-stage Node 20 → Nginx Alpine | 80 | 3000 |
 
+> O agente de IA usa **Groq Cloud** (API externa) — nenhuma imagem pesada de modelo local é necessária. A API key é lida da variável de ambiente `GROQ_API_KEY`, configurada no arquivo `.env` (não commitado).
+
 ### Build da API — multi-stage
 
 ```dockerfile
@@ -507,8 +511,15 @@ volumes:
 ```bash
 git clone <repo-url> e-auditoria
 cd e-auditoria
+
+# Configure a API key do Groq (gratuita em https://console.groq.com)
+cp .env.example .env
+# Edite .env e preencha GROQ_API_KEY=gsk_...
+
 docker compose up --build
 ```
+
+> O agente IA funciona sem a key — o chat simplesmente retorna erro se a variável estiver vazia. As demais funcionalidades não dependem do Groq.
 
 | URL | Descrição |
 |---|---|
@@ -558,6 +569,7 @@ npm run dev
 | `ConnectionStrings__Default` | `Host=localhost;...` | `Host=postgres;...` |
 | `ASPNETCORE_ENVIRONMENT` | `Development` | `Docker` |
 | `Jwt__Key` | Definida em `appsettings.json` | Mesma chave (via env ou arquivo) |
+| `Groq__ApiKey` | Vazio (IA desabilitada) | Lido de `GROQ_API_KEY` no `.env` |
 
 ---
 
@@ -592,6 +604,8 @@ A engine tributária é coberta prioritariamente — é o núcleo do negócio e 
 - Endpoint `POST /api/admin/seed` para repovoar dados sem reiniciar containers
 - Autenticação JWT com BCrypt + perfis de acesso
 - Personalização de tema e nome de exibição persistidos por usuário (localStorage)
+- **CNPJ alfanumérico**: suporte ao novo formato da Receita Federal (letras nos primeiros 8 dígitos)
+- **Reativação de empresa**: empresas inativadas podem ser reativadas com obrigações geradas automaticamente
 
 ---
 
@@ -623,16 +637,18 @@ O desenvolvedor descreveu o problema de negócio e as restrições técnicas do 
 | Seed pulando obrigações em restart | Verificação de fase única | Refatorado para duas fases independentes |
 | Ambiguidade em `AddInfrastructure` | Dois métodos com mesmo nome | Renomeado para `AddInfrastructureServices` |
 | Controllers MVC gerados inicialmente | IA não priorizou o requisito do edital | Migrado para Minimal APIs com `MapGroup` + extensões por recurso |
+| Services chamando repositórios de outro domínio | IA violou separação de camadas | `DashboardService`, `EntregaService`, `AgenteIaService` corrigidos para usar `IObrigacaoService` e `IEmpresaService` |
+| Ollama como imagem Docker pesada | Modelo local desnecessário para avaliação | Substituído por Groq Cloud — API key via `.env`, sem peso no Docker |
 
 **Onde a IA contribuiu mais**
 - Suite de testes com ~40 cenários cobrindo edge cases de regime × obrigação × vencimento
-- Docker Compose com healthcheck, depends_on e proxy Nginx
 - Frontend: 4 páginas, navegação com estado, Timeline, modais, exportação CSV, autenticação JWT
 
 **Onde o desenvolvedor teve que guiar**
 - Convenção de DTO do projeto (não é um padrão universal)
 - Montagem de Arquitetura e diretrizes de padrões de código
 - Padrão de uso do typescript e limpeza de código
+- Docker Compose com healthcheck, depends_on e proxy Nginx
 - `DateTime Kind=Unspecified` como bug latente — não aparece no build, só em runtime com PostgreSQL
 - Identificação de que o seed pulava obrigações em reinicializações
 - Decisão de estrutura monorepo vs. repositórios separados

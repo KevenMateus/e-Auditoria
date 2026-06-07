@@ -21,7 +21,7 @@ const { Text } = Typography
 const menuItems = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/empresas', icon: <BankOutlined />, label: 'Empresas' },
-  { key: '/calendario', icon: <CalendarOutlined />, label: 'Calendário' },
+  { key: '/calendario', icon: <CalendarOutlined />, label: 'Calendario' },
   { key: '/alertas', icon: <BellOutlined />, label: 'Alertas' },
 ]
 
@@ -46,8 +46,7 @@ export default function MainLayout() {
     navigate('/login', { replace: true })
   }
 
-  // Nome exibido: displayName salvo > nome da conta
-  const displayName = theme.displayName || user?.nome || 'Usuário'
+  const displayName = theme.displayName || user?.nome || 'Usuario'
   const initials = displayName
     .split(' ')
     .slice(0, 2)
@@ -74,7 +73,7 @@ export default function MainLayout() {
             e-Auditoria
           </Text>
           <br />
-          <Text style={{ color: '#90a4ae', fontSize: 12 }}>Obrigações Acessórias</Text>
+          <Text style={{ color: '#90a4ae', fontSize: 12 }}>Obrigacoes Acessorias</Text>
         </div>
 
         <Menu
@@ -150,7 +149,7 @@ export default function MainLayout() {
               </div>
             </Space>
             <Space size={4}>
-              <Tooltip title="Configurações">
+              <Tooltip title="Configuracoes">
                 <SettingOutlined style={{ color: '#90a4ae', fontSize: 14 }} />
               </Tooltip>
               <Tooltip title="Sair">
@@ -158,7 +157,7 @@ export default function MainLayout() {
                   type="text"
                   icon={<LogoutOutlined style={{ color: '#90a4ae', fontSize: 14 }} />}
                   onClick={(e) => {
-                    e.stopPropagation() // não dispara o onClick do container (abrir settings)
+                    e.stopPropagation()
                     handleLogout()
                   }}
                   style={{ padding: 2, height: 'auto' }}

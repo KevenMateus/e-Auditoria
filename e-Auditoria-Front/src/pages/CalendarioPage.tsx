@@ -25,12 +25,7 @@ const STATUS_FILTROS: { value: StatusObrigacao | ''; label: string }[] = [
 ]
 
 function CalendarioTab({
-  empresaId,
-  mes,
-  ano,
-  filtroStatus,
-  setFiltroStatus,
-  onMesChange,
+  empresaId, mes, ano, filtroStatus, setFiltroStatus, onMesChange,
 }: {
   empresaId: string | null
   mes: number
@@ -58,11 +53,9 @@ function CalendarioTab({
   const gerarMutation = useMutation({
     mutationFn: () => obrigacoesService.gerar(empresaId!, mes, ano),
     onSuccess: async (data) => {
-      // Popula o cache da query ativa (sem filtro de status) com os dados já retornados
       queryClient.setQueryData(['calendario', empresaId, mes, ano, filtroStatus], data)
-      // Invalida todas as variações de filtro para forçar refetch consistente
       await queryClient.invalidateQueries({ queryKey: ['calendario', empresaId] })
-      messageApi.success('Obrigações geradas com sucesso!')
+      messageApi.success('Obrigacoes geradas com sucesso!')
     },
     onError: (err: Error) => messageApi.error(err.message),
   })
@@ -97,7 +90,7 @@ function CalendarioTab({
 
   const columns = [
     {
-      title: 'Obrigação',
+      title: 'Obrigacao',
       dataIndex: 'tipoDescricao',
       key: 'tipo',
       sorter: (a: ObrigacaoAcessoria, b: ObrigacaoAcessoria) =>
@@ -141,7 +134,7 @@ function CalendarioTab({
       render: (_: unknown, record: ObrigacaoAcessoria) =>
         record.entrega
           ? <Text style={{ color: '#2E7D32' }}>{new Date(record.entrega.dataEntrega).toLocaleDateString('pt-BR')}</Text>
-          : <Text type="secondary">—</Text>,
+          : <Text type="secondary">-</Text>,
     },
     {
       title: '',
@@ -195,7 +188,7 @@ function CalendarioTab({
               disabled={!empresaId}
               loading={gerarMutation.isPending}
             >
-              Gerar Obrigações
+              Gerar Obrigacoes
             </Button>
             <Button
               icon={<DownloadOutlined />}
@@ -211,7 +204,7 @@ function CalendarioTab({
       </Row>
 
       {!empresaId ? (
-        <Empty description="Selecione uma empresa para visualizar o calendário." style={{ padding: 60 }} />
+        <Empty description="Selecione uma empresa para visualizar o calendario." style={{ padding: 60 }} />
       ) : (
         <Spin spinning={isLoading}>
           <Table
@@ -231,7 +224,7 @@ function CalendarioTab({
       <style>{`.row-atrasada td { background: #fff5f5 !important; }`}</style>
 
       <Modal
-        title={`Registrar entrega — ${entregaModal?.tipoDescricao}`}
+        title={`Registrar entrega - ${entregaModal?.tipoDescricao}`}
         open={!!entregaModal}
         onCancel={() => { setEntregaModal(null); form.resetFields() }}
         onOk={() => form.submit()}
@@ -262,7 +255,7 @@ function CalendarioTab({
           >
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>
-          <Form.Item label="Observação" name="observacao">
+          <Form.Item label="Observacao" name="observacao">
             <Input.TextArea rows={3} placeholder="Opcional" />
           </Form.Item>
         </Form>
@@ -279,7 +272,7 @@ function HistoricoTab({ empresaId }: { empresaId: string | null }) {
   })
 
   if (!empresaId) {
-    return <Empty description="Selecione uma empresa para ver o histórico." style={{ padding: 60 }} />
+    return <Empty description="Selecione uma empresa para ver o historico." style={{ padding: 60 }} />
   }
 
   if (isLoading) {
@@ -318,10 +311,7 @@ function HistoricoTab({ empresaId }: { empresaId: string | null }) {
 
   return (
     <div style={{ maxWidth: 600, paddingTop: 8 }}>
-      <Timeline
-        mode="left"
-        items={itens}
-      />
+      <Timeline mode="left" items={itens} />
     </div>
   )
 }
@@ -338,7 +328,6 @@ export default function CalendarioPage() {
   const [filtroStatus, setFiltroStatus] = useState<StatusObrigacao | ''>('')
   const [abaAtiva, setAbaAtiva] = useState('calendario')
 
-  // Se vier navegação com empresaId pré-definido, limpa o state para não re-aplicar
   useEffect(() => {
     if ((location.state as { empresaId?: string } | null)?.empresaId) {
       window.history.replaceState({}, '')
@@ -361,7 +350,7 @@ export default function CalendarioPage() {
   return (
     <div>
       <Title level={4} style={{ marginBottom: 20, color: '#0D1B2A' }}>
-        Calendário de Obrigações
+        Calendario de Obrigacoes
       </Title>
 
       <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
@@ -381,12 +370,8 @@ export default function CalendarioPage() {
           <Col>
             <Tag
               style={{
-                height: 32,
-                lineHeight: '30px',
-                fontSize: 13,
-                background: '#1565C018',
-                borderColor: '#1565C055',
-                color: '#1565C0',
+                height: 32, lineHeight: '30px', fontSize: 13,
+                background: '#1565C018', borderColor: '#1565C055', color: '#1565C0',
               }}
             >
               {empresaSelecionada.regimeTributarioDescricao}
@@ -405,7 +390,7 @@ export default function CalendarioPage() {
             label: (
               <span>
                 <ClockCircleOutlined style={{ marginRight: 6 }} />
-                Calendário
+                Calendario
               </span>
             ),
             children: (
@@ -426,7 +411,7 @@ export default function CalendarioPage() {
             label: (
               <span>
                 <HistoryOutlined style={{ marginRight: 6 }} />
-                Histórico de Entregas
+                Historico de Entregas
               </span>
             ),
             children: (

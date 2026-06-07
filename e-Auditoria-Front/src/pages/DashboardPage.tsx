@@ -1,42 +1,16 @@
 import type { CSSProperties } from 'react'
 import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Progress,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Tag,
-  Typography,
-  message,
+  Alert, Button, Card, Col, Progress, Row, Select, Space, Spin, Tag, Typography, message,
 } from 'antd'
 import {
-  BankOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  ExclamationCircleOutlined,
-  FileTextOutlined,
-  RiseOutlined,
-  WarningOutlined,
+  BankOutlined, CheckCircleOutlined, ClockCircleOutlined, DatabaseOutlined,
+  ExclamationCircleOutlined, FileTextOutlined, RiseOutlined, WarningOutlined,
 } from '@ant-design/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import {
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import { dashboardService } from '../services/dashboard'
 import { empresasService } from '../services/empresas'
@@ -46,7 +20,7 @@ import type { AlertaObrigacao } from '../types'
 const { Title, Text } = Typography
 
 const MESES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
@@ -64,25 +38,18 @@ function agruparAlertasPorSemana(alertas: AlertaObrigacao[]) {
     let label: string
 
     if (a.diasRestantes < 0) {
-      faixa = 'atrasadas'
-      label = 'Atrasadas'
+      faixa = 'atrasadas'; label = 'Atrasadas'
     } else if (a.diasRestantes <= 7) {
-      faixa = 'semana1'
-      label = '0–7 dias'
+      faixa = 'semana1'; label = '0-7 dias'
     } else if (a.diasRestantes <= 14) {
-      faixa = 'semana2'
-      label = '8–14 dias'
+      faixa = 'semana2'; label = '8-14 dias'
     } else if (a.diasRestantes <= 21) {
-      faixa = 'semana3'
-      label = '15–21 dias'
+      faixa = 'semana3'; label = '15-21 dias'
     } else {
-      faixa = 'semana4'
-      label = '22–30 dias'
+      faixa = 'semana4'; label = '22-30 dias'
     }
 
-    if (!grupos[faixa]) {
-      grupos[faixa] = { label, Atrasadas: 0, Urgentes: 0, Normal: 0 }
-    }
+    if (!grupos[faixa]) grupos[faixa] = { label, Atrasadas: 0, Urgentes: 0, Normal: 0 }
 
     if (a.diasRestantes < 0) grupos[faixa].Atrasadas++
     else if (a.diasRestantes <= 7) grupos[faixa].Urgentes++
@@ -135,9 +102,9 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['empresas'] })
       queryClient.invalidateQueries({ queryKey: ['alertas'] })
-      messageApi.success('Dados de demonstração carregados com sucesso!')
+      messageApi.success('Dados de demonstracao carregados com sucesso!')
     },
-    onError: () => messageApi.error('Erro ao carregar dados de demonstração.'),
+    onError: () => messageApi.error('Erro ao carregar dados de demonstracao.'),
   })
 
   const anos = Array.from({ length: 5 }, (_, i) => hoje.getFullYear() - 2 + i)
@@ -152,13 +119,8 @@ export default function DashboardPage() {
     : []
 
   const barData = agruparAlertasPorSemana(alertas)
-
-  const taxaEntrega = data && data.obrigacoesMes > 0
-    ? Math.round((data.entregues / data.obrigacoesMes) * 100)
-    : 0
-  const taxaAtraso = data && data.obrigacoesMes > 0
-    ? Math.round((data.atrasadas / data.obrigacoesMes) * 100)
-    : 0
+  const taxaEntrega = data && data.obrigacoesMes > 0 ? Math.round((data.entregues / data.obrigacoesMes) * 100) : 0
+  const taxaAtraso = data && data.obrigacoesMes > 0 ? Math.round((data.atrasadas / data.obrigacoesMes) * 100) : 0
   const urgentes = alertas.filter((a) => a.diasRestantes >= 0 && a.diasRestantes <= 7).length
   const totalAtrasadas = alertas.filter((a) => a.diasRestantes < 0).length
 
@@ -170,7 +132,7 @@ export default function DashboardPage() {
         <div>
           <Title level={4} style={{ margin: 0, color: '#0D1B2A' }}>Dashboard</Title>
           <Text type="secondary" style={{ fontSize: 13 }}>
-            {MESES[mes - 1]} {ano} — visão consolidada das obrigações
+            {MESES[mes - 1]} {ano} - visao consolidada das obrigacoes
           </Text>
         </div>
         <Space>
@@ -194,11 +156,11 @@ export default function DashboardPage() {
           type="info"
           showIcon
           style={{ marginBottom: 24, borderRadius: 8 }}
-          message="Banco sem dados de demonstração"
+          message="Banco sem dados de demonstracao"
           description={
             empresas.length === 0
-              ? 'Nenhuma empresa cadastrada. Carregue os dados de demonstração para ver o sistema funcionando.'
-              : 'Empresas encontradas sem obrigações geradas. Clique para popular o calendário com dados de demonstração.'
+              ? 'Nenhuma empresa cadastrada. Carregue os dados de demonstracao para ver o sistema funcionando.'
+              : 'Empresas encontradas sem obrigacoes geradas. Clique para popular o calendario com dados de demonstracao.'
           }
           action={
             <Button
@@ -215,7 +177,6 @@ export default function DashboardPage() {
       )}
 
       <Spin spinning={isLoading}>
-
         <Row gutter={[16, 16]}>
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#EEF2FF')}>
@@ -224,15 +185,13 @@ export default function DashboardPage() {
               <div style={kpiLabel}>Empresas</div>
             </Card>
           </Col>
-
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#E0F7FA')}>
               <div style={kpiIcon('#00ACC1')}><FileTextOutlined /></div>
               <div style={kpiValue('#00ACC1')}>{data?.obrigacoesMes ?? 0}</div>
-              <div style={kpiLabel}>Obrigações no Mês</div>
+              <div style={kpiLabel}>Obrigacoes no Mes</div>
             </Card>
           </Col>
-
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#E8F5E9')}>
               <div style={kpiIcon('#2E7D32')}><CheckCircleOutlined /></div>
@@ -240,7 +199,6 @@ export default function DashboardPage() {
               <div style={kpiLabel}>Entregues</div>
             </Card>
           </Col>
-
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#E3F2FD')}>
               <div style={kpiIcon('#1E88E5')}><ClockCircleOutlined /></div>
@@ -248,7 +206,6 @@ export default function DashboardPage() {
               <div style={kpiLabel}>Pendentes</div>
             </Card>
           </Col>
-
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#FFEBEE')}>
               <div style={kpiIcon('#C62828')}><WarningOutlined /></div>
@@ -256,7 +213,6 @@ export default function DashboardPage() {
               <div style={kpiLabel}>Atrasadas</div>
             </Card>
           </Col>
-
           <Col xs={12} sm={8} lg={4}>
             <Card bordered={false} style={cardStyle('#FFF8E1')}>
               <div style={kpiIcon('#F57F17')}><ExclamationCircleOutlined /></div>
@@ -273,92 +229,52 @@ export default function DashboardPage() {
                 <Card bordered={false} style={{ borderRadius: 12, height: '100%' }}>
                   <Title level={5} style={{ color: '#0D1B2A', marginBottom: 20 }}>
                     <RiseOutlined style={{ marginRight: 8, color: '#1565C0' }} />
-                    Desempenho do Mês
+                    Desempenho do Mes
                   </Title>
-
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text strong>Taxa de Entrega</Text>
                       <Text strong style={{ color: '#2E7D32' }}>{taxaEntrega}%</Text>
                     </div>
-                    <Progress
-                      percent={taxaEntrega}
-                      strokeColor="#2E7D32"
-                      trailColor="#E8F5E9"
-                      strokeWidth={10}
-                      showInfo={false}
-                    />
+                    <Progress percent={taxaEntrega} strokeColor="#2E7D32" trailColor="#E8F5E9" strokeWidth={10} showInfo={false} />
                   </div>
-
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text strong>Taxa de Atraso</Text>
                       <Text strong style={{ color: '#C62828' }}>{taxaAtraso}%</Text>
                     </div>
-                    <Progress
-                      percent={taxaAtraso}
-                      strokeColor="#C62828"
-                      trailColor="#FFEBEE"
-                      strokeWidth={10}
-                      showInfo={false}
-                    />
+                    <Progress percent={taxaAtraso} strokeColor="#C62828" trailColor="#FFEBEE" strokeWidth={10} showInfo={false} />
                   </div>
-
                   <div style={{ marginBottom: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text strong>Pendentes</Text>
                       <Text strong style={{ color: '#1E88E5' }}>
-                        {data.obrigacoesMes > 0
-                          ? Math.round((data.pendentes / data.obrigacoesMes) * 100)
-                          : 0}%
+                        {data.obrigacoesMes > 0 ? Math.round((data.pendentes / data.obrigacoesMes) * 100) : 0}%
                       </Text>
                     </div>
                     <Progress
-                      percent={data.obrigacoesMes > 0
-                        ? Math.round((data.pendentes / data.obrigacoesMes) * 100)
-                        : 0}
-                      strokeColor="#1E88E5"
-                      trailColor="#E3F2FD"
-                      strokeWidth={10}
-                      showInfo={false}
+                      percent={data.obrigacoesMes > 0 ? Math.round((data.pendentes / data.obrigacoesMes) * 100) : 0}
+                      strokeColor="#1E88E5" trailColor="#E3F2FD" strokeWidth={10} showInfo={false}
                     />
                   </div>
-
                   <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
-                    <Tag color="success" style={{ borderRadius: 20, padding: '2px 12px' }}>
-                      {data.entregues} entregues
-                    </Tag>
-                    <Tag color="processing" style={{ borderRadius: 20, padding: '2px 12px' }}>
-                      {data.pendentes} pendentes
-                    </Tag>
-                    <Tag color="error" style={{ borderRadius: 20, padding: '2px 12px' }}>
-                      {data.atrasadas} atrasadas
-                    </Tag>
+                    <Tag color="success" style={{ borderRadius: 20, padding: '2px 12px' }}>{data.entregues} entregues</Tag>
+                    <Tag color="processing" style={{ borderRadius: 20, padding: '2px 12px' }}>{data.pendentes} pendentes</Tag>
+                    <Tag color="error" style={{ borderRadius: 20, padding: '2px 12px' }}>{data.atrasadas} atrasadas</Tag>
                   </div>
                 </Card>
               </Col>
 
               <Col xs={24} md={12}>
                 <Card bordered={false} style={{ borderRadius: 12, height: '100%' }}>
-                  <Title level={5} style={{ color: '#0D1B2A', marginBottom: 4 }}>
-                    Distribuição de Status
-                  </Title>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {MESES[mes - 1]} {ano}
-                  </Text>
-
+                  <Title level={5} style={{ color: '#0D1B2A', marginBottom: 4 }}>Distribuicao de Status</Title>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{MESES[mes - 1]} {ano}</Text>
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
                       <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={90}
-                        paddingAngle={3}
-                        dataKey="value"
-                        labelLine={false}
-                        label={CustomPieLabel}
+                        data={pieData} cx="50%" cy="50%"
+                        innerRadius={55} outerRadius={90} paddingAngle={3}
+                        dataKey="value" labelLine={false} label={CustomPieLabel}
                       >
                         {pieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -376,12 +292,8 @@ export default function DashboardPage() {
                         formatter={(value: number, name: string) => [value, name]}
                         contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                       />
-                      <Legend
-                        iconType="circle"
-                        iconSize={10}
-                        formatter={(value) => (
-                          <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>
-                        )}
+                      <Legend iconType="circle" iconSize={10}
+                        formatter={(value) => <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -395,55 +307,24 @@ export default function DashboardPage() {
                   <Card bordered={false} style={{ borderRadius: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                       <div>
-                        <Title level={5} style={{ color: '#0D1B2A', marginBottom: 2 }}>
-                          Alertas por Janela de Tempo
-                        </Title>
+                        <Title level={5} style={{ color: '#0D1B2A', marginBottom: 2 }}>Alertas por Janela de Tempo</Title>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          {alertas.length} obrigações monitoradas — {totalAtrasadas} atrasadas, {urgentes} vencem em até 7 dias
+                          {alertas.length} obrigacoes monitoradas - {totalAtrasadas} atrasadas, {urgentes} vencem em ate 7 dias
                         </Text>
                       </div>
                       <Space>
-                        {totalAtrasadas > 0 && (
-                          <Tag color="error" style={{ borderRadius: 20 }}>
-                            {totalAtrasadas} atrasadas
-                          </Tag>
-                        )}
-                        {urgentes > 0 && (
-                          <Tag color="warning" style={{ borderRadius: 20 }}>
-                            {urgentes} urgentes
-                          </Tag>
-                        )}
+                        {totalAtrasadas > 0 && <Tag color="error" style={{ borderRadius: 20 }}>{totalAtrasadas} atrasadas</Tag>}
+                        {urgentes > 0 && <Tag color="warning" style={{ borderRadius: 20 }}>{urgentes} urgentes</Tag>}
                       </Space>
                     </div>
-
                     <ResponsiveContainer width="100%" height={220}>
                       <BarChart data={barData} barCategoryGap="30%">
                         <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                        <XAxis
-                          dataKey="label"
-                          tick={{ fontSize: 12, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 12, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                          allowDecimals={false}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: 8,
-                            border: 'none',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                          }}
-                        />
-                        <Legend
-                          iconType="circle"
-                          iconSize={10}
-                          formatter={(value) => (
-                            <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>
-                          )}
+                        <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <Legend iconType="circle" iconSize={10}
+                          formatter={(value) => <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>}
                         />
                         <Bar dataKey="Atrasadas" fill="#C62828" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="Urgentes" fill="#F57F17" radius={[4, 4, 0, 0]} />
@@ -461,42 +342,27 @@ export default function DashboardPage() {
           <Card bordered={false} style={{ marginTop: 16, borderRadius: 12, textAlign: 'center', padding: '40px 0' }}>
             <FileTextOutlined style={{ fontSize: 48, color: '#CBD5E1', marginBottom: 16 }} />
             <div style={{ color: '#94A3B8', fontSize: 14 }}>
-              Nenhuma obrigação encontrada para {MESES[mes - 1]} {ano}.
+              Nenhuma obrigacao encontrada para {MESES[mes - 1]} {ano}.
             </div>
           </Card>
         )}
-
       </Spin>
     </div>
   )
 }
 
 const cardStyle = (bg: string): CSSProperties => ({
-  background: bg,
-  borderRadius: 12,
-  position: 'relative',
-  overflow: 'hidden',
+  background: bg, borderRadius: 12, position: 'relative', overflow: 'hidden',
 })
 
 const kpiIcon = (color: string): CSSProperties => ({
-  fontSize: 20,
-  color,
-  marginBottom: 8,
-  opacity: 0.7,
+  fontSize: 20, color, marginBottom: 8, opacity: 0.7,
 })
 
 const kpiValue = (color: string): CSSProperties => ({
-  fontSize: 28,
-  fontWeight: 800,
-  color,
-  lineHeight: 1.1,
-  marginBottom: 4,
+  fontSize: 28, fontWeight: 800, color, lineHeight: 1.1, marginBottom: 4,
 })
 
 const kpiLabel: CSSProperties = {
-  fontSize: 11,
-  color: '#64748b',
-  fontWeight: 500,
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
+  fontSize: 11, color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px',
 }

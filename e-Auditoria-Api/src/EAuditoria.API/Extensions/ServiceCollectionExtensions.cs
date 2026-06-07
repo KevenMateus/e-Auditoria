@@ -16,9 +16,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.AddServices();
+        services.AddServices(configuration);
         return services;
     }
 }

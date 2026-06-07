@@ -17,7 +17,7 @@ const REGIMES: { value: RegimeTributario; label: string }[] = [
   { value: 'SimplesNacional',   label: 'Simples Nacional' },
   { value: 'LucroPresumido',   label: 'Lucro Presumido' },
   { value: 'LucroReal',        label: 'Lucro Real' },
-  { value: 'ImunidadeIsencao', label: 'Imunidade / Isenção' },
+  { value: 'ImunidadeIsencao', label: 'Imunidade / Isencao' },
 ]
 
 const REGIME_COLORS: Record<RegimeTributario, string> = {
@@ -28,7 +28,9 @@ const REGIME_COLORS: Record<RegimeTributario, string> = {
 }
 
 function formatCnpj(cnpj: string) {
-  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+  const c = cnpj.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (c.length !== 14) return cnpj
+  return `${c.slice(0, 2)}.${c.slice(2, 5)}.${c.slice(5, 8)}/${c.slice(8, 12)}-${c.slice(12)}`
 }
 
 function RegimeTag({ record }: { record: Empresa }) {
@@ -46,7 +48,6 @@ function RegimeTag({ record }: { record: Empresa }) {
   )
 }
 
-// Payload da resposta 409 do backend quando o CNPJ pertence a empresa inativa
 interface EmpresaInativaConflict {
   status: number
   mensagem: string
@@ -87,7 +88,6 @@ export default function EmpresasPage() {
       form.resetFields()
     },
     onError: (err: unknown) => {
-      // 409 → empresa inativa com mesmo CNPJ
       const axErr = err as { response?: { status: number; data: EmpresaInativaConflict } }
       if (axErr?.response?.status === 409) {
         setConflito(axErr.response.data)
@@ -120,7 +120,7 @@ export default function EmpresasPage() {
 
   const colunasBase = [
     {
-      title: 'Razão Social',
+      title: 'Razao Social',
       dataIndex: 'razaoSocial',
       key: 'razaoSocial',
       sorter: (a: Empresa, b: Empresa) => a.razaoSocial.localeCompare(b.razaoSocial),
@@ -158,7 +158,7 @@ export default function EmpresasPage() {
       width: 100,
       render: (_: unknown, record: Empresa) => (
         <Space size="small">
-          <Tooltip title="Ver calendário">
+          <Tooltip title="Ver calendario">
             <Button
               size="small"
               icon={<CalendarOutlined />}
@@ -175,7 +175,7 @@ export default function EmpresasPage() {
               onClick={() =>
                 Modal.confirm({
                   title: 'Desativar empresa?',
-                  content: `"${record.razaoSocial}" será desativada. Você poderá reativá-la depois na aba Inativas.`,
+                  content: `"${record.razaoSocial}" sera desativada. Voce podera reativa-la depois na aba Inativas.`,
                   okText: 'Desativar',
                   okButtonProps: { danger: true },
                   cancelText: 'Cancelar',
@@ -205,12 +205,7 @@ export default function EmpresasPage() {
             onClick={() =>
               Modal.confirm({
                 title: 'Reativar empresa?',
-                content: (
-                  <span>
-                    <b>{record.razaoSocial}</b> será reativada e as obrigações dos próximos
-                    12 meses serão geradas automaticamente.
-                  </span>
-                ),
+                content: `"${record.razaoSocial}" sera reativada e as obrigacoes dos proximos 12 meses serao geradas automaticamente.`,
                 okText: 'Reativar',
                 okButtonProps: { style: { background: '#2E7D32', borderColor: '#2E7D32' } },
                 cancelText: 'Cancelar',
@@ -227,17 +222,8 @@ export default function EmpresasPage() {
     <div>
       {contextHolder}
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <Title level={4} style={{ margin: 0, color: '#0D1B2A' }}>
-          Empresas
-        </Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={4} style={{ margin: 0, color: '#0D1B2A' }}>Empresas</Title>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -272,15 +258,7 @@ export default function EmpresasPage() {
               <span>
                 Inativas
                 {inativas.length > 0 && (
-                  <Tag
-                    style={{
-                      marginLeft: 6,
-                      fontSize: 11,
-                      lineHeight: '18px',
-                      padding: '0 5px',
-                    }}
-                    color="default"
-                  >
+                  <Tag style={{ marginLeft: 6, fontSize: 11, lineHeight: '18px', padding: '0 5px' }} color="default">
                     {inativas.length}
                   </Tag>
                 )}
@@ -301,7 +279,6 @@ export default function EmpresasPage() {
         ]}
       />
 
-      {/* Modal: cadastrar nova empresa */}
       <Modal
         title="Cadastrar Empresa"
         open={modalOpen}
@@ -319,9 +296,9 @@ export default function EmpresasPage() {
           style={{ marginTop: 16 }}
         >
           <Form.Item
-            label="Razão Social"
+            label="Razao Social"
             name="razaoSocial"
-            rules={[{ required: true, message: 'Informe a razão social' }]}
+            rules={[{ required: true, message: 'Informe a razao social' }]}
           >
             <Input placeholder="Nome da empresa" />
           </Form.Item>
@@ -331,23 +308,34 @@ export default function EmpresasPage() {
             name="cnpj"
             rules={[
               { required: true, message: 'Informe o CNPJ' },
-              { pattern: /^[\d.\-/]+$/, message: 'CNPJ inválido' },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve()
+                  const clean = value.replace(/[^A-Za-z0-9]/g, '')
+                  if (clean.length !== 14)
+                    return Promise.reject('CNPJ deve ter 14 caracteres (alfanumerico)')
+                  return Promise.resolve()
+                },
+              },
             ]}
           >
-            <Input placeholder="00.000.000/0000-00" maxLength={18} />
+            <Input
+              placeholder="AB.CDE.FGH/0001-99 ou 00.000.000/0001-99"
+              maxLength={18}
+              style={{ textTransform: 'uppercase' }}
+            />
           </Form.Item>
 
           <Form.Item
-            label="Regime Tributário"
+            label="Regime Tributario"
             name="regimeTributario"
-            rules={[{ required: true, message: 'Selecione o regime tributário' }]}
+            rules={[{ required: true, message: 'Selecione o regime tributario' }]}
           >
             <Select placeholder="Selecione" options={REGIMES} />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Modal: CNPJ pertence a empresa inativa (409) */}
       <Modal
         title={
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -376,8 +364,8 @@ export default function EmpresasPage() {
           <p>{conflito?.mensagem}</p>
           <p style={{ marginTop: 12 }}>
             <Text type="secondary">
-              Deseja reativar <b>{conflito?.razaoSocial}</b>? As obrigações dos próximos
-              12 meses serão geradas automaticamente.
+              Deseja reativar <b>{conflito?.razaoSocial}</b>? As obrigacoes dos proximos
+              12 meses serao geradas automaticamente.
             </Text>
           </p>
         </div>

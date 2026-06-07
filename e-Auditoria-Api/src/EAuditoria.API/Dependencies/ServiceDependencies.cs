@@ -7,14 +7,14 @@ namespace EAuditoria.API.Dependencies;
 
 public static class ServiceDependencies
 {
-    public static IServiceCollection AddServices(this IServiceCollection services)
+    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAutoMapper(cfg =>
             cfg.AddMaps(typeof(DomainToDtoProfile).Assembly));
         services.AddSingleton<ITaxRulesEngine, TaxRulesEngine>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IEmpresaService, EmpresaService>();
         services.AddScoped<IObrigacaoService, ObrigacaoService>();
+        services.AddScoped<IEmpresaService, EmpresaService>();
         services.AddScoped<IEntregaService, EntregaService>();
         services.AddScoped<IDashboardService, DashboardService>();
 

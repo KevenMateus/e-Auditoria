@@ -11,22 +11,22 @@ namespace EAuditoria.Application.Services;
 public class EntregaService : IEntregaService
 {
     private readonly IEntregaRepository _entregaRepository;
-    private readonly IObrigacaoRepository _obrigacaoRepository;
+    private readonly IObrigacaoService _obrigacaoService;
     private readonly IMapper _mapper;
 
     public EntregaService(
         IEntregaRepository entregaRepository,
-        IObrigacaoRepository obrigacaoRepository,
+        IObrigacaoService obrigacaoService,
         IMapper mapper)
     {
         _entregaRepository = entregaRepository;
-        _obrigacaoRepository = obrigacaoRepository;
+        _obrigacaoService = obrigacaoService;
         _mapper = mapper;
     }
 
     public async Task<EntregaResponse> RegistrarAsync(Guid obrigacaoId, RegistrarEntregaRequest request)
     {
-        var obrigacao = await _obrigacaoRepository.ObterComEntregaAsync(obrigacaoId)
+        var obrigacao = await _obrigacaoService.ObterEntidadeComEntregaAsync(obrigacaoId)
             ?? throw new KeyNotFoundException($"Obrigação '{obrigacaoId}' não encontrada.");
 
         if (obrigacao.Status == StatusObrigacao.Entregue)
@@ -35,7 +35,7 @@ public class EntregaService : IEntregaService
         var entrega = new EntregaObrigacao(obrigacaoId, request.DataEntrega, request.Observacao);
 
         obrigacao.MarcarComoEntregue();
-        _obrigacaoRepository.Atualizar(obrigacao);
+        _obrigacaoService.AtualizarEntidade(obrigacao);
 
         await _entregaRepository.AdicionarAsync(entrega);
         await _entregaRepository.SalvarAsync();

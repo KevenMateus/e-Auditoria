@@ -14,12 +14,14 @@ public class CriarEmpresaRequest
     public string RazaoSocial { get; set; } = string.Empty;
 
     /// <summary>
-    /// CNPJ da empresa, somente dígitos (14 caracteres).
-    /// Deve ser único no sistema.
+    /// CNPJ da empresa. Aceita o novo formato alfanumérico da Receita Federal
+    /// (ex: AB.CDE.FGH/0001-99). A máscara é removida automaticamente antes do
+    /// armazenamento. Deve ser único entre empresas ativas.
     /// </summary>
-    /// <example>12345678000199</example>
+    /// <example>AB.CDE.FGH/0001-99</example>
     [Required]
-    [Length(14, 14)]
+    [MinLength(14)]
+    [MaxLength(18)]
     public string Cnpj { get; set; } = string.Empty;
 
     /// <summary>

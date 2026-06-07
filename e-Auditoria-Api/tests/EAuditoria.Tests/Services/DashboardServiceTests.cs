@@ -1,3 +1,5 @@
+using EAuditoria.Application.DTOs.Response;
+using EAuditoria.Application.Interfaces.Services;
 using EAuditoria.Application.Services;
 using EAuditoria.Domain.Entities;
 using EAuditoria.Domain.Enums;
@@ -10,7 +12,7 @@ namespace EAuditoria.Tests.Services;
 
 public class DashboardServiceTests
 {
-    private readonly Mock<IObrigacaoRepository> _obrigacaoRepo = new();
+    private readonly Mock<IObrigacaoService> _obrigacaoService = new();
     private readonly DashboardService _service;
 
     private static readonly Empresa _empresa =
@@ -18,7 +20,7 @@ public class DashboardServiceTests
 
     public DashboardServiceTests()
     {
-        _service = new DashboardService(_obrigacaoRepo.Object);
+        _service = new DashboardService(_obrigacaoService.Object);
     }
 
     // ----------------------------------------------------------------
@@ -35,7 +37,7 @@ public class DashboardServiceTests
             Entregues: 25,
             Atrasadas: 5);
 
-        _obrigacaoRepo.Setup(r => r.ObterContagensDashboardAsync(6, 2025)).ReturnsAsync(counts);
+        _obrigacaoService.Setup(s => s.ObterContagensDashboardAsync(6, 2025)).ReturnsAsync(counts);
 
         var result = await _service.ObterAsync(6, 2025);
 
@@ -51,7 +53,7 @@ public class DashboardServiceTests
     [Fact]
     public async Task Obter_QuandoBancoVazio_DeveRetornarZeros()
     {
-        _obrigacaoRepo.Setup(r => r.ObterContagensDashboardAsync(It.IsAny<int>(), It.IsAny<int>()))
+        _obrigacaoService.Setup(s => s.ObterContagensDashboardAsync(It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new DashboardCounts(0, 0, 0, 0, 0));
 
         var result = await _service.ObterAsync(1, 2025);
@@ -63,7 +65,7 @@ public class DashboardServiceTests
     [Fact]
     public async Task Obter_DevePropagarMesEAno()
     {
-        _obrigacaoRepo.Setup(r => r.ObterContagensDashboardAsync(12, 2024))
+        _obrigacaoService.Setup(s => s.ObterContagensDashboardAsync(12, 2024))
             .ReturnsAsync(new DashboardCounts(5, 30, 10, 15, 5));
 
         var result = await _service.ObterAsync(12, 2024);
@@ -79,18 +81,18 @@ public class DashboardServiceTests
     [Fact]
     public async Task ObterAlertas_DeveUnirVencendoEAtrasadas()
     {
-        var vencendo = new List<ObrigacaoAcessoria>
+        var vencendo = new List<AlertaObrigacaoResponse>
         {
-            CriarObrigacao(DateTime.UtcNow.AddDays(5)),
-            CriarObrigacao(DateTime.UtcNow.AddDays(15)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(5)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(15)),
         };
-        var atrasadas = new List<ObrigacaoAcessoria>
+        var atrasadas = new List<AlertaObrigacaoResponse>
         {
-            CriarObrigacao(DateTime.UtcNow.AddDays(-3)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(-3)),
         };
 
-        _obrigacaoRepo.Setup(r => r.ObterVencendoEmDiasAsync(30)).ReturnsAsync(vencendo);
-        _obrigacaoRepo.Setup(r => r.ObterAtrasadasAsync()).ReturnsAsync(atrasadas);
+        _obrigacaoService.Setup(s => s.ObterVencendoEmDiasAsync(30)).ReturnsAsync(vencendo);
+        _obrigacaoService.Setup(s => s.ObterAtrasadasAsync()).ReturnsAsync(atrasadas);
 
         var result = (await _service.ObterAlertasAsync()).ToList();
 
@@ -100,18 +102,18 @@ public class DashboardServiceTests
     [Fact]
     public async Task ObterAlertas_DeveOrdenarPorUrgencia_AtrasadasPrimeiro()
     {
-        var vencendo = new List<ObrigacaoAcessoria>
+        var vencendo = new List<AlertaObrigacaoResponse>
         {
-            CriarObrigacao(DateTime.UtcNow.AddDays(20)),
-            CriarObrigacao(DateTime.UtcNow.AddDays(5)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(20)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(5)),
         };
-        var atrasadas = new List<ObrigacaoAcessoria>
+        var atrasadas = new List<AlertaObrigacaoResponse>
         {
-            CriarObrigacao(DateTime.UtcNow.AddDays(-10)),
+            CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(-10)),
         };
 
-        _obrigacaoRepo.Setup(r => r.ObterVencendoEmDiasAsync(30)).ReturnsAsync(vencendo);
-        _obrigacaoRepo.Setup(r => r.ObterAtrasadasAsync()).ReturnsAsync(atrasadas);
+        _obrigacaoService.Setup(s => s.ObterVencendoEmDiasAsync(30)).ReturnsAsync(vencendo);
+        _obrigacaoService.Setup(s => s.ObterAtrasadasAsync()).ReturnsAsync(atrasadas);
 
         var result = (await _service.ObterAlertasAsync()).ToList();
 
@@ -124,11 +126,11 @@ public class DashboardServiceTests
     [Fact]
     public async Task ObterAlertas_DeveEliminarDuplicatas()
     {
-        // Mesma instância aparece nas duas listas
-        var obrigacao = CriarObrigacao(DateTime.UtcNow.AddDays(-1));
+        // Mesmo ID aparece nas duas listas
+        var alerta = CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(-1));
 
-        _obrigacaoRepo.Setup(r => r.ObterVencendoEmDiasAsync(30)).ReturnsAsync([obrigacao]);
-        _obrigacaoRepo.Setup(r => r.ObterAtrasadasAsync()).ReturnsAsync([obrigacao]);
+        _obrigacaoService.Setup(s => s.ObterVencendoEmDiasAsync(30)).ReturnsAsync([alerta]);
+        _obrigacaoService.Setup(s => s.ObterAtrasadasAsync()).ReturnsAsync([alerta]);
 
         var result = (await _service.ObterAlertasAsync()).ToList();
 
@@ -138,8 +140,8 @@ public class DashboardServiceTests
     [Fact]
     public async Task ObterAlertas_QuandoNenhum_DeveRetornarListaVazia()
     {
-        _obrigacaoRepo.Setup(r => r.ObterVencendoEmDiasAsync(30)).ReturnsAsync([]);
-        _obrigacaoRepo.Setup(r => r.ObterAtrasadasAsync()).ReturnsAsync([]);
+        _obrigacaoService.Setup(s => s.ObterVencendoEmDiasAsync(30)).ReturnsAsync([]);
+        _obrigacaoService.Setup(s => s.ObterAtrasadasAsync()).ReturnsAsync([]);
 
         var result = await _service.ObterAlertasAsync();
 
@@ -149,10 +151,12 @@ public class DashboardServiceTests
     [Fact]
     public async Task ObterAlertas_DeveTerDescricoesPreenchidas()
     {
-        var obrigacao = CriarObrigacao(DateTime.UtcNow.AddDays(3));
+        var alerta = CriarAlerta(_empresa.Id, DateTime.UtcNow.AddDays(3));
+        alerta.TipoDescricao = "DCTF — Declaração de Débitos";
+        alerta.StatusDescricao = "Pendente";
 
-        _obrigacaoRepo.Setup(r => r.ObterVencendoEmDiasAsync(30)).ReturnsAsync([obrigacao]);
-        _obrigacaoRepo.Setup(r => r.ObterAtrasadasAsync()).ReturnsAsync([]);
+        _obrigacaoService.Setup(s => s.ObterVencendoEmDiasAsync(30)).ReturnsAsync([alerta]);
+        _obrigacaoService.Setup(s => s.ObterAtrasadasAsync()).ReturnsAsync([]);
 
         var result = (await _service.ObterAlertasAsync()).ToList();
 
@@ -161,16 +165,25 @@ public class DashboardServiceTests
     }
 
     // ----------------------------------------------------------------
-    // Helper — cria ObrigacaoAcessoria sem navigation property Empresa
-    // DashboardService usa o.Empresa?.RazaoSocial com null-coalescing,
-    // então null retorna string.Empty sem lançar exceção
+    // Helper
     // ----------------------------------------------------------------
 
-    private static ObrigacaoAcessoria CriarObrigacao(DateTime vencimento) =>
-        new ObrigacaoAcessoria(
-            _empresa.Id,
-            TipoObrigacao.DCTF,
-            PeriodicidadeObrigacao.Mensal,
-            6, 2025,
-            vencimento);
+    private static AlertaObrigacaoResponse CriarAlerta(Guid empresaId, DateTime vencimento)
+    {
+        var hoje = DateTime.UtcNow.Date;
+        var dias = (int)(vencimento.Date - hoje).TotalDays;
+        return new AlertaObrigacaoResponse
+        {
+            ObrigacaoId    = Guid.NewGuid(),
+            EmpresaId      = empresaId,
+            EmpresaNome    = "Empresa Teste",
+            Cnpj           = "11222333000181",
+            Tipo           = TipoObrigacao.DCTF,
+            TipoDescricao  = "DCTF",
+            Vencimento     = vencimento,
+            DiasRestantes  = dias,
+            Status         = dias < 0 ? StatusObrigacao.Atrasada : StatusObrigacao.Pendente,
+            StatusDescricao = dias < 0 ? "Atrasada" : "Pendente",
+        };
+    }
 }
