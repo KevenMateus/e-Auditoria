@@ -1,2 +1,0 @@
--- Este arquivo foi substituído por scripts/migration.sql
--- Use: psql -U postgres -d eauditoria -f scripts/migration.sql
